@@ -10,15 +10,6 @@ namespace Server
     {
         public bool m_IsInProgress;
 
-        public int m_MaxPlayers;
-        public int m_CurPlayers;
-
-        public Game()
-        {
-            m_IsInProgress = false;
-
-            m_MaxPlayers = 4;
-            m_CurPlayers = 0;
-        }
+        public int m_MaxPlayers = 4;
     }
 }
