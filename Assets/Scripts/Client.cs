@@ -1,26 +1,27 @@
-﻿using LiteNetLib;
+﻿using BumberBalls.CustomDebug;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using BumberBalls.CustomDebug;
 
 namespace BumberBalls
 {
-
+    [RequireComponent(typeof(Game))]
     public class Client : MonoBehaviour
     {
         private EventBasedNetListener m_listener;
         private NetDataWriter m_writer;
         private NetManager m_client;
-
+        private Game m_game;
+        //Debug
         private DebugUI m_debugUI = new DebugUI();
-
-        private bool m_IsInProgress;
 
         private void Awake()
         {
             DontDestroyOnLoad(this);
+
+            m_game = gameObject.GetComponent<Game>();
         }
 
         private void Update()
@@ -51,17 +52,54 @@ namespace BumberBalls
             m_listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod) =>
             {
                 string sCahce = dataReader.GetString();
-                dataReader.Recycle();
 
                 if (sCahce == "START")
                 {
-                    StartMatch();
+                    int iCahce = dataReader.GetInt();
+                    dataReader.Recycle();
+                    m_game.StartMatch(iCahce);
+
+                    //Debug
+                    Debug.Log("Recieved integer: " + iCahce);
                 }
-
-                m_debugUI.Write("Connection successful! IPv4: " + temp);
-
-                //Debug
-                Debug.Log("Recieved: " + sCahce);
+                else if (sCahce == "UPDATE")
+                {
+                    int iCahce = dataReader.GetInt();
+                    for (int i = 0; i < iCahce; i++)
+                    {
+                        //Position floats
+                        float fCache = dataReader.GetFloat();
+                        m_game.m_playerObject[i].transform.position = new Vector3
+                        (
+                            fCache,
+                            m_game.m_playerObject[i].transform.position.y,
+                            m_game.m_playerObject[i].transform.position.z
+                        );
+                        fCache = dataReader.GetFloat();
+                        m_game.m_playerObject[i].transform.position = new Vector3
+                        (
+                            m_game.m_playerObject[i].transform.position.x,
+                            fCache,
+                            m_game.m_playerObject[i].transform.position.z
+                        );
+                        fCache = dataReader.GetFloat();
+                        m_game.m_playerObject[i].transform.position = new Vector3
+                        (
+                            m_game.m_playerObject[i].transform.position.x,
+                            m_game.m_playerObject[i].transform.position.y,
+                            fCache
+                        );
+                        //TODO: Velocity floats
+                        fCache = dataReader.GetFloat();
+                        fCache = dataReader.GetFloat();
+                        fCache = dataReader.GetFloat();
+                    }
+                    dataReader.Recycle();
+                }
+                else
+                {
+                    m_debugUI.Write("Message from the host: " + sCahce);
+                }
             };
 
             InvokeRepeating("PollEvents", 0, 0.02f);
@@ -69,8 +107,9 @@ namespace BumberBalls
 
         private void NetworkInput(float x, float y)
         {
-            if (m_IsInProgress)
+            if (m_game.m_IsInProgress)
             {
+                m_writer.Put("INPUT");
                 m_writer.Put(x);
                 m_writer.Put(y);
                 m_client.FirstPeer.Send(m_writer, DeliveryMethod.ReliableOrdered);
@@ -92,19 +131,13 @@ namespace BumberBalls
         public void Ready()
         {
             m_writer.Put("READY");
-
             m_client.FirstPeer.Send(m_writer, DeliveryMethod.ReliableOrdered);
+            m_writer.Reset();
         }
 
         private void PollEvents()
         {
             m_client.PollEvents();
-        }
-
-        private void StartMatch()
-        {
-            m_IsInProgress = true;
-            GameObject.Find("Canvas").SetActive(false);
         }
     }
 }
