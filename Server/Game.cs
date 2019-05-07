@@ -37,7 +37,7 @@ namespace Server
                 //Check if players are off the platform
                 for (int i = 0; i < m_player.Length; i++)
                 {
-                    if (m_player[i].m_Position.Length() > 6.0f && !m_player[i].m_Killed)
+                    if (m_player[i].m_Position.Length() > 6.133f && !m_player[i].m_Killed)
                     {
                         EliminatePlyer(i, server, writer);
                     }
@@ -98,14 +98,7 @@ namespace Server
                     }
                     else
                     {
-                        if (player[i].m_Velocity.Length() >= m_PlayerAcc)
-                        {
-                            player[i].m_Velocity *= 1 - (2 * m_PlayerAcc);
-                        }
-                        else if (player[i].m_Velocity.Length() > 0)
-                        {
-                            player[i].m_Velocity = Vector3.zero;
-                        }
+                        player[i].m_Velocity *= 1 - (2 * m_PlayerAcc);
                     }
 
                     player[i].m_Position.x += player[i].m_Velocity.x;
