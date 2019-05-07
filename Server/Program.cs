@@ -63,9 +63,6 @@ namespace Server
                     reader.Recycle();
 
                     m_game.m_player[peer.Id].m_Input = new Vector3(x, y);
-
-                    //Debug
-                    Console.WriteLine("Peer " + peer.Id + " X: " + x + " Y: " + y);
                 }
             };
 

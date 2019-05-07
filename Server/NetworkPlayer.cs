@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Server
+﻿namespace Server
 {
-    class NetworkPlayer
+    internal class NetworkPlayer
     {
         public bool m_Colliding;
+        public bool m_Killed;
         public bool m_Ready;
         public int m_Id;
         public Vector3 m_Position;

@@ -2,10 +2,12 @@
 
 namespace BumberBalls
 {
+    [RequireComponent(typeof(Rigidbody))]
     public class Player : MonoBehaviour
     {
-        public int m_Id;
+        public bool m_IsKilled;
         public float[] m_Input = new float[2];
+        public int m_Id;
 
         [SerializeField] private bool m_locallyControlled;
         [SerializeField] private float m_movementForce;
@@ -24,6 +26,16 @@ namespace BumberBalls
                     gameObject.GetComponent<Rigidbody>().AddForceAtPosition(movement.normalized * m_movementForce, transform.position + new Vector3(0, 0.5f, 0));
                 }
             }
+        }
+
+        /// <summary>
+        /// Make player lose
+        /// </summary>
+        public void Kill()
+        {
+            m_IsKilled = true;
+            gameObject.GetComponent<Rigidbody>().useGravity = true;
+            gameObject.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
         }
     }
 }

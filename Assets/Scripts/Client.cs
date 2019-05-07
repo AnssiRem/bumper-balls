@@ -20,17 +20,19 @@ namespace BumberBalls
         private void Awake()
         {
             DontDestroyOnLoad(this);
-
             m_game = gameObject.GetComponent<Game>();
         }
 
         private void Update()
         {
             UpdateScene();
-
             NetworkInput(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
         }
 
+        /// <summary>
+        /// Connects to host, initializes client
+        /// </summary>
+        /// <param name="inputText">The IPv4 of host</param>
         public void NetworkConnect(Text inputText)
         {
             string temp = inputText.text;
@@ -42,12 +44,7 @@ namespace BumberBalls
             m_client.Start();
             m_client.Connect(temp, 2310, "amosdhhs9tnxtndb48fw");
 
-            m_debugUI.Write("Connecting to IPv4: " + temp);
-
-#if UNITY_EDITOR
-            Debug.Log("Starting client... Port: " + m_client.LocalPort);
-            Debug.Log("Connecting... IPv4: " + temp);
-#endif
+            m_debugUI.Write("Starting client... Port: " + m_client.LocalPort + "\nConnecting to IPv4: " + temp);
 
             m_listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod) =>
             {
@@ -60,7 +57,7 @@ namespace BumberBalls
                     m_game.StartMatch(iCahce);
 
                     //Debug
-                    Debug.Log("Recieved integer: " + iCahce);
+                    m_debugUI.Write("Recieved integer: " + iCahce);
                 }
                 else if (sCahce == "UPDATE")
                 {
@@ -68,33 +65,65 @@ namespace BumberBalls
                     for (int i = 0; i < iCahce; i++)
                     {
                         //Position floats
-                        float fCache = dataReader.GetFloat();
-                        m_game.m_playerObject[i].transform.position = new Vector3
-                        (
-                            fCache,
-                            m_game.m_playerObject[i].transform.position.y,
-                            m_game.m_playerObject[i].transform.position.z
-                        );
-                        fCache = dataReader.GetFloat();
-                        m_game.m_playerObject[i].transform.position = new Vector3
-                        (
-                            m_game.m_playerObject[i].transform.position.x,
-                            fCache,
-                            m_game.m_playerObject[i].transform.position.z
-                        );
-                        fCache = dataReader.GetFloat();
-                        m_game.m_playerObject[i].transform.position = new Vector3
-                        (
-                            m_game.m_playerObject[i].transform.position.x,
-                            m_game.m_playerObject[i].transform.position.y,
-                            fCache
-                        );
-                        //TODO: Velocity floats
-                        fCache = dataReader.GetFloat();
-                        fCache = dataReader.GetFloat();
-                        fCache = dataReader.GetFloat();
+                        if (!m_game.m_playerObject[i].GetComponent<Player>().m_IsKilled)
+                        {
+                            float fCache = dataReader.GetFloat();
+                            m_game.m_playerObject[i].transform.position = new Vector3
+                            (
+                                fCache,
+                                m_game.m_playerObject[i].transform.position.y,
+                                m_game.m_playerObject[i].transform.position.z
+                            );
+                            fCache = dataReader.GetFloat();
+                            m_game.m_playerObject[i].transform.position = new Vector3
+                            (
+                                m_game.m_playerObject[i].transform.position.x,
+                                fCache,
+                                m_game.m_playerObject[i].transform.position.z
+                            );
+                            fCache = dataReader.GetFloat();
+                            m_game.m_playerObject[i].transform.position = new Vector3
+                            (
+                                m_game.m_playerObject[i].transform.position.x,
+                                m_game.m_playerObject[i].transform.position.y,
+                                fCache
+                            );
+                        //TODO: Velocity floats/lerp?
+                        dataReader.GetFloat();
+                        dataReader.GetFloat();
+                        dataReader.GetFloat();
+                        }
+                        else
+                        {
+                            for (int j = 0; j < 6; j++)
+                            {
+                                dataReader.GetFloat();
+                            }
+                        }
                     }
                     dataReader.Recycle();
+                }
+                else if (sCahce == "KILL")
+                {
+                    int iCahce = dataReader.GetInt();
+                    GameObject[] playerObject = GameObject.FindGameObjectsWithTag("Player");
+                    for (int i = 0; i < playerObject.Length; i++)
+                    {
+                        Player player = playerObject[i].GetComponent<Player>();
+                        if (player.m_Id == iCahce + 1)
+                        {
+                            player.Kill();
+
+                            //Debug
+                            m_debugUI.Write(string.Format("Killed player {0}", iCahce + 1));
+                        }
+                    }
+                    dataReader.Recycle();
+                }
+                else if(sCahce == "WIN")
+                {
+                    int iCahce = dataReader.GetInt();
+                    m_game.EndMatch(iCahce);
                 }
                 else
                 {
@@ -105,6 +134,11 @@ namespace BumberBalls
             InvokeRepeating("PollEvents", 0, 0.02f);
         }
 
+        /// <summary>
+        /// Send client's inputs to the host
+        /// </summary>
+        /// <param name="x">Horizontal axis</param>
+        /// <param name="y">Vertical axis</param>
         private void NetworkInput(float x, float y)
         {
             if (m_game.m_IsInProgress)
@@ -117,6 +151,9 @@ namespace BumberBalls
             }
         }
 
+        /// <summary>
+        /// Change Unity scene when client has connected
+        /// </summary>
         private void UpdateScene()
         {
             if (m_client != null)
@@ -128,6 +165,9 @@ namespace BumberBalls
             }
         }
 
+        /// <summary>
+        /// Send ready message to host
+        /// </summary>
         public void Ready()
         {
             m_writer.Put("READY");
@@ -135,6 +175,9 @@ namespace BumberBalls
             m_writer.Reset();
         }
 
+        /// <summary>
+        /// Invokeable client PollEvents method
+        /// </summary>
         private void PollEvents()
         {
             m_client.PollEvents();
