@@ -1,4 +1,4 @@
-# Bumper Balls 1.0
+# Bumper Balls 1.1
 A project for the network and AI games courses during the spring 2019.
 
 **This repository uses LiteNetLib 0.9 UDP library made by Ruslan Pyrch (Copyright (c) 2019) for its networking.**
