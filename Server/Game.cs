@@ -12,12 +12,16 @@ namespace Server
     {
         public bool m_IsInProgress;
         public int m_MaxPlayers = 4;
+        public float m_PlayerAcc = 0.0025f;
         public NetworkPlayer[] m_player = new NetworkPlayer[0];
+
 
         public void NetworkGame(NetManager server, NetDataWriter writer)
         {
             if (m_IsInProgress)
             {
+                CalcPlayers(m_player);
+
                 writer.Put("UPDATE");
                 writer.Put(m_player.Length);
                 for (int i = 0; i < m_player.Length; i++)
@@ -31,6 +35,57 @@ namespace Server
                 }
                 server.SendToAll(writer, DeliveryMethod.ReliableOrdered);
                 writer.Reset();
+            }
+        }
+
+        private void CalcPlayers(NetworkPlayer[] player)
+        {
+            for (int i = 0; i < player.Length; i++)
+            {
+                if (!player[i].m_Colliding)
+                {
+                    for (int j = 0; j < player.Length; j++)
+                    {
+                        if (i != j)
+                        {
+                            Vector3 dist2Player = player[j].m_Position - player[i].m_Position;
+                            if (dist2Player.Length() <= 0.5f)
+                            {
+                                player[i].m_Colliding = true;
+                                player[j].m_Colliding = true;
+                                PlayersCollide(player[i], player[j]);
+                            }
+                        }
+                    }
+                }
+
+                if (!player[i].m_Colliding)
+                {
+                    if (player[i].m_Input.x != 0 ||
+                        player[i].m_Input.y != 0)
+                    {
+                        player[i].m_Velocity.x += m_PlayerAcc * player[i].m_Input.Normalize().x;
+                        player[i].m_Velocity.z += m_PlayerAcc * player[i].m_Input.Normalize().y;
+                    }
+                    else
+                    {
+                        if (player[i].m_Velocity.Length() >= m_PlayerAcc)
+                        {
+                            player[i].m_Velocity *= 1 - (2 * m_PlayerAcc);
+                        }
+                        else if (player[i].m_Velocity.Length() > 0)
+                        {
+                            player[i].m_Velocity = Vector3.zero;
+                        }
+                    }
+
+                    player[i].m_Position.x += player[i].m_Velocity.x;
+                    player[i].m_Position.z += player[i].m_Velocity.z;
+                }
+            }
+            for (int i = 0; i < player.Length; i++)
+            {
+                player[i].m_Colliding = false;
             }
         }
 
@@ -67,6 +122,21 @@ namespace Server
 
             server.SendToAll(writer, DeliveryMethod.ReliableOrdered);
             writer.Reset();
+        }
+
+        private void PlayersCollide(NetworkPlayer player1, NetworkPlayer player2)
+        {
+            Vector3 dist2Player = player2.m_Position - player1.m_Position;
+            float apparentEnergy = player1.m_Velocity.Length() + player2.m_Velocity.Length();
+
+            player1.m_Velocity = -dist2Player.Normalize() * apparentEnergy * 0.5f;
+            player2.m_Velocity = -player1.m_Velocity;
+
+            player1.m_Position.x += player1.m_Velocity.x;
+            player1.m_Position.z += player1.m_Velocity.z;
+
+            player2.m_Position.x += player2.m_Velocity.x;
+            player2.m_Position.z += player2.m_Velocity.z;
         }
 
         public bool AllReady()

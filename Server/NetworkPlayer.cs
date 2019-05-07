@@ -8,6 +8,7 @@ namespace Server
 {
     class NetworkPlayer
     {
+        public bool m_Colliding;
         public bool m_Ready;
         public int m_Id;
         public Vector3 m_Position;
