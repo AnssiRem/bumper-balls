@@ -36,7 +36,7 @@ namespace BumberBalls
         public void NetworkConnect(Text inputText)
         {
             string temp = inputText.text;
-
+            
             m_listener = new EventBasedNetListener();
             m_client = new NetManager(m_listener);
             m_writer = new NetDataWriter();

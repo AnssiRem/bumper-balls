@@ -36,7 +36,11 @@ namespace Server
 
         public Vector3 Normalize()
         {
-            return new Vector3(x / Length(), y / Length(), z / Length());
+            if (Length() != 0)
+            {
+                return new Vector3(x / Length(), y / Length(), z / Length());
+            }
+            else return zero;
         }
 
         public static Vector3 operator -(Vector3 vec)

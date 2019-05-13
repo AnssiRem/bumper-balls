@@ -1150,7 +1150,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Bumper Balls 1.1
+  m_Text: 'Bumper Balls 1.2
+
+'
 --- !u!222 &1740692492
 CanvasRenderer:
   m_ObjectHideFlags: 0

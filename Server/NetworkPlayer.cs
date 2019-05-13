@@ -16,5 +16,13 @@
             m_Velocity = new Vector3();
             m_Input = new Vector3();
         }
+
+        public NetworkPlayer(int id)
+        {
+            m_Id = id;
+            m_Position = new Vector3();
+            m_Velocity = new Vector3();
+            m_Input = new Vector3();
+        }
     }
 }

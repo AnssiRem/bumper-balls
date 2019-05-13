@@ -1,11 +1,13 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
+using Server.AI;
 using System;
 
 namespace Server
 {
     internal class Game
     {
+        public bool m_AddBots = true;
         public bool m_IsInProgress;
         public int m_MaxPlayers = 4;
         public float m_PlayerAcc = 0.0025f;
@@ -69,6 +71,12 @@ namespace Server
         {
             for (int i = 0; i < player.Length; i++)
             {
+                //Handle Ai players
+                if (player[i] is AIPlayer)
+                {
+                    ((AIPlayer)player[i]).UpdateInput(this);
+                }
+
                 //Check if two player's are colliding
                 if (!player[i].m_Colliding && !player[i].m_Killed)
                 {
@@ -139,6 +147,23 @@ namespace Server
         /// <param name="game">Game object</param>
         public void StartMatch(NetManager server, NetDataWriter writer, Game game)
         {
+            if (m_AddBots)
+            {
+                NetworkPlayer[] temp = new NetworkPlayer[m_MaxPlayers];
+                for (int i = 0; i < m_MaxPlayers; i++)
+                {
+                    if (i < m_player.Length)
+                    {
+                        temp[i] = m_player[i];
+                    }
+                    else
+                    {
+                        temp[i] = new AIPlayer(i);
+                    }
+                }
+                m_player = temp;
+            }
+
             game.m_IsInProgress = true;
             writer.Put("START");
             writer.Put(m_player.Length);//Player amount
@@ -178,7 +203,15 @@ namespace Server
             for (int i = 0; i < m_player.Length; i++)
             {
                 m_player[i].m_Killed = false;
-                m_player[i].m_Ready = false;
+                m_player[i].m_Velocity = new Vector3();
+                if (m_player[i] is AIPlayer)
+                {
+                    m_player[i].m_Ready = true;
+                }
+                else
+                {
+                    m_player[i].m_Ready = false;
+                }
             }
         }
 
